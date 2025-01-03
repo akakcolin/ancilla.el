@@ -11,8 +11,8 @@
 ;; editing, refactoring, and answering questions.
 ;;
 ;; (use-package ancilla
-;;  :straight (:host github :repo "shouya/ancilla.el")
-;;  :custom (ancilla-adaptor-chat-openai-api-key "sk-XXXXXXXXXX")
+;;  :straight (:host github :repo "akakcolin/ancilla.el")
+;;  :custom (ancilla-adaptor-chat-deepseek-api-key "sk-XXXXXXXXXX")
 ;;  :bind ("C-x C-r" . ancilla-generate-or-rewrite))
 ;;
 
@@ -42,28 +42,28 @@
   :options '(chat))
 
 (defcustom ancilla-chat-backend
-  'openai
+  'deepseek
   "The backend to use for the chat adaptor."
   :type 'symbol
   :group 'ancilla
-  :options '(openai))
+  :options '(deepseek))
 
 (defcustom ancilla-adaptor-chat-model
-  "gpt-4o-mini"
+  "deepseek-coder"
   "The model to use."
   :type 'string
   :group 'ancilla
-  :options '("gpt-3.5-turbo" "gpt-4" "gpt-4o" "gpt-4o-mini")) ;; more models available at https://platform.openai.com/docs/models
+  :options '("deepseek-coder" "deepseek-chart")) ;; 
 
-(defcustom ancilla-openai-api-chat-endpoint
-  "https://api.openai.com/v1/chat/completions"
-  "API endpoint for the OpenAI chat completions."
+(defcustom ancilla-deepseek-api-chat-endpoint
+  "https://api.deepseek.com/chat/completions"
+  "API endpoint for the DeepSeek chat completions."
   :type 'string
   :group 'ancilla)
 
-(defcustom ancilla-adaptor-chat-openai-api-key
+(defcustom ancilla-adaptor-chat-deepseek-api-key
   nil
-  "API key for the OpenAI GPT-3 API used by the chat adaptor."
+  "API key for the DeepSeek API used by the chat adaptor."
   :type 'string
   :group 'ancilla)
 
@@ -469,16 +469,16 @@ ROLE and TEXT."
     (ancilla-chat-mode)
     (delete-region (point-min) (point-max))))
 
-(defun ancilla--adaptor-chat-openai-api-key ()
+(defun ancilla--adaptor-chat-deepseek-api-key ()
   "Get the OpenAI API key or print a nice error."
-  (or (and (boundp 'ancilla-adaptor-chat-openai-api-key)
-           (string-prefix-p "sk-" ancilla-adaptor-chat-openai-api-key)
-           ancilla-adaptor-chat-openai-api-key)
+  (or (and (boundp 'ancilla-adaptor-chat-deepseek-api-key)
+           (string-prefix-p "sk-" ancilla-adaptor-chat-deepseek-api-key)
+           ancilla-adaptor-chat-deepseek-api-key)
       (user-error "Variable %s undefined or invalid"
-                  'ancilla-adaptor-chat-openai-api-key)))
+                  'ancilla-adaptor-chat-deepseek-api-key)))
 
 (defun ancilla--adaptor-chat-request-buffer-send (callback)
-  "Send the conversation in *ancilla-chat* to `ancilla-openai-api-chat-endpoint'.
+  "Send the conversation in *ancilla-chat* to `ancilla-deepseek-api-chat-endpoint'.
 
 CALLBACK should take the assistant's reply (string) as the only
 argument."
@@ -615,7 +615,7 @@ replacement text as argument."
 
 ;; ---- PRIVATE FUNCTIONS FOR ADAPTOR BACKEND: OpenAI -----
 
-(defun ancilla--adaptor-chat-openai-request (messages callback)
+(defun ancilla--adaptor-chat-deepseek-request (messages callback)
   "Send the conversation to OpenAI chat completion API.
 
 MESSAGES is a list of (ROLE . TEXT) pairs, where ROLE is one of \"system\",\"user\",\"assistant\".
@@ -626,14 +626,14 @@ argument."
          (url-request-extra-headers
           `(("Content-Type" . "application/json")
             ("Authorization" .
-             ,(concat "Bearer " (ancilla--adaptor-chat-openai-api-key)))))
+             ,(concat "Bearer " (ancilla--adaptor-chat-deepseek-api-key)))))
          (url-request-data
           (json-encode
            `(:model ,ancilla-adaptor-chat-model
                     :messages ,messages
                     :temperature 0.1))))
     (ancilla--request-and-extract-json
-     :url ancilla-openai-api-chat-endpoint
+     :url ancilla-deepseek-api-chat-endpoint
      :callback
      (lambda (json)
        ;; insert the response
@@ -714,7 +714,7 @@ argument."
 (put 'chat 'ancilla-hooks '(ancilla--adaptor-chat-show-request-message))
 (put 'chat 'ancilla-backend ancilla-chat-backend)
 
-(put 'openai 'request 'ancilla--adaptor-chat-openai-request)
+(put 'deepseek 'request 'ancilla--adaptor-chat-deepseek-request)
 
 (provide 'ancilla)
 
